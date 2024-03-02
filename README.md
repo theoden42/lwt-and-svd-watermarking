@@ -6,7 +6,6 @@ This is an implementation of the DWT + SVD based Watermark Embedding System whic
 
 WaterMark Embedding:
 
-<<<<<<< HEAD
 - [ ] Make a module to load and perform DWT of Image with coefficient extractino
 - [ ] Generate Watermark module to the method mentioned in the paper
 - [ ] Create Scheme to Embed Watermark in the coefficients 
