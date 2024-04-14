@@ -162,7 +162,7 @@ key2 = 'random_seed2'  # Example secret seed key2
 embedding_threshold = 0.5  # Example embedding threshold
 
 # Print original image shape and first few pixels
-print("Original image shape:", original_image.shape)
+print("Original image shape:", original_image.shape)  
 print("First few pixels of the original image:\n", original_image[:3, :3])
 
 # Embed watermark
