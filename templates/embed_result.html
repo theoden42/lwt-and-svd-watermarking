@@ -1,13 +1,13 @@
 <!-- embed_result.html -->
-<html> 
-<head> 
-    <title>Watermark Embedding Success</title> 
-</head> 
-<body> 
-    <p>File uploaded successfully</p> 
-    <p>File Name: {{ file_path }}</p> 
-    <p><a href="{{ url_for('serve_file', filename=os.path.basename(file_path)) }}">Download File</a></p>
-    <p><img src="{{ url_for('serve_file', filename=os.path.basename(file_path)) }}" alt="Uploaded File"></p>
-</body> 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Embedded Result</title>
+</head>
+<body>
+    <h1>Embedded Result</h1>
+    <img src="{{ url_for('uploaded_file', filename=file_name) }}" alt="Embedded Image">
+</body>
 </html>
-

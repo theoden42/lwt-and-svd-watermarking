@@ -176,7 +176,7 @@ def embed_watermark(img_path):
     original_image = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
     original_image = cv2.resize(original_image, (512, 512))
 
-    print('perform lwt on ', image_file)
+    print('perform lwt on ', img_path)
     coeffs = perform_lwt(original_image)
     LL, (HL3, LH3, HH3), (HL2, LH2, HH2), (HL1, LH1, HH1) = coeffs
     print('HL3 ', HL3)  # 64x64
@@ -191,7 +191,7 @@ def embed_watermark(img_path):
 
     watermarked_image = inverse_lwt(new_coeffs)
 
-    new_image_name = image_file.split(".")[0] + "_embedded.png"
+    new_image_name = img_path.split(".")[0] + "_embedded.png"
     new_path = os.path.join("embedded-train-advay",
                             new_image_name)
     cv2.imwrite(new_path, watermarked_image)
@@ -205,7 +205,7 @@ def embed_watermark(img_path):
     return new_path
 
 
-for image_file in os.listdir("non-embedded-train"):
-    image_path = os.path.join("non-embedded-train", image_file)
-    embed_watermark(image_path)
+# for image_file in os.listdir("non-embedded-train"):
+#     image_path = os.path.join("non-embedded-train", image_file)
+#     embed_watermark(image_path)
     # print(generate_sync_info(cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)))
