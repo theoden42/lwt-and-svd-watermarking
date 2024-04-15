@@ -1,0 +1,246 @@
+<!-- watermark_embedder.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload</title>
+    <style>
+		
+	@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap");
+	:root {
+  --primary: #d90429;
+  --secondary: #1b2631;
+  --border: #8d99ae;
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.4);
+  background-color: #1b2631;
+  border-radius: 10px;
+}
+
+/* Fade Transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease-in-out;
+}
+
+.fade-enter,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Body Styles */
+body {
+  padding: 0;
+  margin: 0;
+  background-color: #333745;
+  color: var(--secondary);
+  font-family: "DM Mono", monospace;
+  width: 100%;
+  height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+/* App Container Styles */
+#app {
+  /* Heading Styles */
+  h2 {
+    color: white;
+  }
+
+  /* File Input Box Styles */
+  .file-input-box {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    border-radius: 10px;
+    box-shadow: 0 5px 10px 0 rgba(0, 0, 0, 0.2);
+    width: 600px;
+    height: auto;
+    background-color: #ffffff;
+    padding: 20px;
+
+    /* Input Box Styles */
+    .input-box {
+      padding: 20px;
+      display: grid;
+      place-items: center;
+      border: 2px dashed #cacaca;
+      border-radius: 5px;
+      margin-bottom: 5px;
+      cursor: pointer;
+
+      /* Heading Styles */
+      h4 {
+        margin: 0;
+      }
+    }
+
+    /* Small Text Styles */
+    small {
+      font-size: 12px;
+      color: #a3a3a3;
+    }
+
+    /* Wrapper File Section Styles */
+    .wrapper-file-section {
+      /* Selected Files Container Styles */
+      .selected-files {
+        /* Heading Styles */
+        h5 {
+          margin-bottom: 10px;
+        }
+
+        /* File List Styles */
+        .file-list {
+          overflow-y: auto;
+          list-style-type: none;
+          padding: 0 10px 10px 0;
+          margin: 0;
+          transition: 0.3s all ease-in-out;
+
+          /* File Item Styles */
+          .item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #cacaca;
+            border-radius: 5px;
+            padding: 10px;
+            font-size: 14px;
+
+            /* Margin Bottom Styles */
+            &:not(:last-child) {
+              margin-bottom: 5px;
+            }
+
+            /* Remove Icon Styles */
+            .remove {
+              display: grid;
+              place-items: center;
+              color: #c0392b;
+              cursor: pointer;
+              transition: 0.3s all ease-in-out;
+
+              /* Hover Styles */
+              &:hover {
+                color: #e74c3c;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+	</style>
+
+</head>
+<body>
+    <div id="app">
+        <h2>Upload image for watermark embedding</h2>
+        <div class="container">
+            <div class="file-input-box">
+                <div class="wrapper-file-input">
+                  
+                  <form action="/embed_success" method="post" enctype="multipart/form-data">
+                    <div class="input-box"  onclick="openFileInput()">
+                        <h4>
+                            <i class="fa-solid fa-upload"></i>
+                            Choose image to upload
+                        </h4>
+                        <input
+                            id="fileInput"
+                            type="file"
+                            accept="image/*"
+                            name="file" 
+                            hidden
+                            onchange="handleFileChange(event)"
+                        />
+                    </div>
+                    <small>Files Supported: JPG, PNG, SVG</small>
+                    <input type="submit" value="Upload">
+                  </form>
+                </div>
+
+                <div class="wrapper-file-section">
+                    <div class="selected-files" id="selectedFiles" style="display: none;">
+                        <h5>Selected Images</h5>
+                        <ul id="fileList" class="file-list">
+                            <!-- Selected files will be added dynamically here -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <button onclick="addWatermark()">Add Watermark</button>
+    <script>
+		function openFileInput() {
+    document.getElementById("fileInput").click();
+}
+
+function handleFileChange(event) {
+  const fileList = event.target.files;
+
+// Show the selected images container
+document.getElementById("selectedFiles").style.display = "block";
+
+for (let i = 0; i < fileList.length; i++) {
+    const file = fileList[i];
+    if (file.type.startsWith('image/')) { // Check if the file is an image
+        const listItem = document.createElement("li");
+        listItem.classList.add("item");
+
+        const image = document.createElement("img");
+        image.src = URL.createObjectURL(file);
+        image.classList.add("thumbnail");
+
+        listItem.appendChild(image);
+
+        document.getElementById("fileList").appendChild(listItem);
+    }
+ }
+}
+function addWatermark() {
+            // Logic to add watermark to the selected images
+            // You can send the images to the server for watermarking using AJAX or form submission
+            // After watermarking, you can show or download the watermarked images
+            alert("Watermarking functionality will be added here.");
+        }
+// function formatFileSize(size) {
+//     const units = ["B", "KB", "MB", "GB"];
+//     let index = 0;
+
+//     while (size >= 1024 && index < units.length - 1) {
+//         size /= 1024;
+//         index++;
+//     }
+
+//     return `${size.toFixed(2)} ${units[index]}`;
+// }
+
+// function removeFile(index) {
+//     const fileList = document.getElementById("fileList");
+//     fileList.removeChild(fileList.childNodes[index]);
+// }
+
+	</script>
+</body>
+</html>

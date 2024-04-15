@@ -169,7 +169,6 @@ clf.fit(X_train, y_train)
 # # Evaluate the model
 
 # # Save the trained model
-# joblib.dump(clf, 'svm_model.pkl')
 
 # print("SVM model saved.")
 predictions = clf.predict(X_test)
@@ -182,3 +181,5 @@ classification_rep = classification_report(y_test, predictions)
 print("Accuracy:", accuracy)
 print("Classification Report:\n", classification_rep)
 
+
+joblib.dump(clf, 'svm_model.pkl')
