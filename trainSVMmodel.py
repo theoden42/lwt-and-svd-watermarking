@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 from skimage import io
 from sklearn import svm
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import classification_report
 import joblib
 
 np.set_printoptions(threshold=np.inf)
@@ -56,16 +58,16 @@ def extract_features(original_image, reference_watermark, signature_watermark, k
     for matrix in singular_matrices:
         arr.append(matrix[1])
     features=[
-            np.mean(arr),                # Mean (p1)
+            # np.mean(arr),                # Mean (p1)
             np.var(arr),                 # Variance (p2)
-            np.std(arr),                 # Standard deviation (p3)
-            np.median(arr),              # Median (p4)
-            #np.cov(matrix[1]),                 # Covariance (p5)
-            np.mean(np.power(arr, 5)),   # Moment (5th order) (p6)
-            np.percentile(arr, q=75),    # Quantile (p7)
-            #np.diff(matrix[1]).tolist(),       # Difference between singular values (p8)
-            #np.diff(np.square(matrix[1])).tolist(),  # Difference between the square of singular values (p9)
-            np.sum(np.square(arr))      # Energy (p10)
+            # np.std(arr),                 # Standard deviation (p3)
+            # np.median(arr),              # Median (p4)
+            # #np.cov(matrix[1]),                 # Covariance (p5)
+            # np.mean(np.power(arr, 5)),   # Moment (5th order) (p6)
+            # np.percentile(arr, q=75),    # Quantile (p7)
+            # #np.diff(matrix[1]).tolist(),       # Difference between singular values (p8)
+            # #np.diff(np.square(matrix[1])).tolist(),  # Difference between the square of singular values (p9)
+            # np.sum(np.square(arr))      # Energy (p10)
         ]
     return np.array(features)
 
@@ -116,10 +118,18 @@ clf = svm.SVC(kernel='rbf')
 # # Train the SVM classifier
 clf.fit(X_train, y_train)
 # # Evaluate the model
-accuracy = clf.score(X_test, y_test)
-print("Accuracy:", accuracy)
 
 # # Save the trained model
-joblib.dump(clf, 'svm_model.pkl')
+# joblib.dump(clf, 'svm_model.pkl')
 
-print("SVM model saved.")
+# print("SVM model saved.")
+predictions = clf.predict(X_test)
+
+# Evaluate performance
+accuracy = accuracy_score(y_test, predictions)
+classification_rep = classification_report(y_test, predictions)
+
+# Print accuracy and classification report
+print("Accuracy:", accuracy)
+print("Classification Report:\n", classification_rep)
+
