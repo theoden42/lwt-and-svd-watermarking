@@ -2,8 +2,6 @@ import numpy as np
 import pywt
 import cv2
 import os
-import matplotlib.pyplot as plt
-from skimage import io
 
 def psnr(original, compressed):
     """
@@ -142,13 +140,13 @@ for image_file in os.listdir("non-embedded-train"):
 
     print('perform lwt on ', image_file)
     coeffs = perform_lwt(original_image)
-    LL, (LH3, HL3, HH3), (LH2, HL2, HH2), (LH1, HL1, HH1) = coeffs
-    print('HL3 ', HL3)  # 64x64
+    LL, (HL3, LH3, HH3), (LH2, HL2, HH2), (LH1, HL1, HH1) = coeffs
+
     new_HL3 = generate_watermark_HL3(
         HL3, reference_watermark, signature_watermark, key1, key2, embedding_threshold)
 
     print('new HL3 ', new_HL3)
-    new_coeffs = LL, (LH3, new_HL3, HH3), (LH2, HL2, HH2), (LH1, HL1, HH1)
+    new_coeffs = LL, (new_HL3, LH3, HH3), (LH2, HL2, HH2), (LH1, HL1, HH1)
 
     watermarked_image = inverse_lwt(new_coeffs)
 

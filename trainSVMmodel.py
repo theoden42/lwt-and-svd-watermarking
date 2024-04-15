@@ -2,8 +2,6 @@ import numpy as np
 import pywt
 import cv2
 import os
-import matplotlib.pyplot as plt
-from skimage import io
 from sklearn import svm
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
@@ -14,11 +12,11 @@ np.set_printoptions(threshold=np.inf)
 
 def perform_lwt(image, levels):
     """Perform Lifting Wavelet Transform (LWT) on the original image"""
-    coeffs = image.copy()
-    for _ in range(levels):
-        coeffs,ign = pywt.dwt2(coeffs, 'haar')  # Perform LWT using Haar wavelet
-    hl3_subband = coeffs
-    return hl3_subband
+    # Define embedding threshold
+    coeffs = pywt.wavedec2(image, 'haar', level=3)
+    LL, (HL3, LH3, HH3), (LH2, HL2, HH2), (LH1, HL1, HH1) = coeffs
+
+    return HL3
 
 def randomize_coefficients(subband, key1,var):
     """Randomize HL3 sub-band coefficients using secret seed key1"""
@@ -43,93 +41,89 @@ def perform_svd(blocks):
         singular_matrices.append((u, s, vh))
     return singular_matrices
 
-def extract_features(original_image, reference_watermark, signature_watermark, key1, key2, embedding_threshold):
-    # Step 1: Perform LWT three times to obtain HL3 sub-band
-    hl3_subband = perform_lwt(original_image, 3)
-    # # Step 2: Randomize coefficients
-    randomized_subband = randomize_coefficients(hl3_subband, key1,True)
-    # return randomized_subband
-    # # Step 3: Arrange and scramble coefficients
-    scrambled_subband = arrange_and_scramble(randomized_subband, key2 ,True)
-    # # Step 4: Perform SVD on every block
-    scrambled_subband = scrambled_subband.reshape(-1, 2, 2)
-    arr=[]
-    singular_matrices = perform_svd(scrambled_subband)
-    for matrix in singular_matrices:
-        arr.append(matrix[1])
-    features=[
-            # np.mean(arr),                # Mean (p1)
-            np.var(arr),                 # Variance (p2)
-            # np.std(arr),                 # Standard deviation (p3)
-            # np.median(arr),              # Median (p4)
-            # #np.cov(matrix[1]),                 # Covariance (p5)
-            # np.mean(np.power(arr, 5)),   # Moment (5th order) (p6)
-            # np.percentile(arr, q=75),    # Quantile (p7)
-            # #np.diff(matrix[1]).tolist(),       # Difference between singular values (p8)
-            # #np.diff(np.square(matrix[1])).tolist(),  # Difference between the square of singular values (p9)
-            # np.sum(np.square(arr))      # Energy (p10)
-        ]
+def extract_features(singular_values_matrix):
+    features = []
+    for sv_matrix in singular_values_matrix:
+        #print(sv_matrix[1])
+        sv_flat = sv_matrix[1].flatten()
+
+        mean_val = np.mean(sv_flat)  
+        variance_val = np.var(sv_flat)  
+        std_dev_val = np.std(sv_flat)  
+        median_val = np.median(sv_flat)  
+        #covariance_val = np.cov(sv_flat.reshape(-1, 1))[0, 0]
+        moment_val = np.mean(np.power(sv_flat, 5))  
+        quantile_val = np.percentile(sv_flat, q=75)  
+        diff_singular_vals = np.diff(sv_flat)[0]
+        diff_sq_singular_vals = np.diff(np.square(sv_flat))[0]
+        energy_val = np.sum(np.square(sv_flat))  
+        
+        largest_singular_vals = np.sort(sv_flat)[-2:]
+
+        # Append computed features and singular values to the feature list
+        features.append([mean_val, variance_val, std_dev_val, median_val,
+                         moment_val, quantile_val, diff_singular_vals, diff_sq_singular_vals,
+                         energy_val, largest_singular_vals[0], largest_singular_vals[1]])
+
     return np.array(features)
 
 # Main script
 reference_watermark = np.array([1,0,0,1,1,0,0,1,0,1,0,1,0,1,1,0,1,1,0,1,0,0,1,1,0,0,1,0,0,0,0,0,0,1,1,0,0,0,0,1,0,0,0,1,1,0,0,0,0,1,0,0,0,1,0,1,0,1,0,0,1,1,1,0,1,0,1,1,0,0,1,0,1,1,0,0,1,0,0,1,1,1,0,1,1,0,0,0,1,0,1,0,0,0,0,1,0,1,1,0,0,1,0,0,1,0,1,1,0,1,0,0,1,1,1,1,0,0,0,0,1,0,1,0,0,0,0,1,1,0,0,1,0,1,0,1,0,1,1,1,0,0,0,0,1,0,1,1,1,1,1,0,1,1,1,0,0,1,0,1,1,0,0,0,1,1,0,1,0,1,1,1,1,0,0,0,0,0,0,1,0,1,0,1,1,1,1,0,0,0,0,0,1,1,0,1,0,0,1,1,1,1,1,0,1,1,0,1,1,0,1,1,0,1,1,0,1,1,1,0,0,1,0,0,1,0,1,0,0,1,1,0,0,1,1,0,1,1,0,0,1,0,0,1,0,1,1,1,1,1,0,0,1,0,1,1,1,1,1,0,0,0,1,1,1,1,1,0,0,0,1,0,0,1,1,0,1,1,0,0,1,0,1,0,0,0,0,1,0,1,1,1,0,0,1,1,1,1,0,1,0,1,0,0,1,1,1,1,1,0,0,0,1,0,1,1,0,0,1,0,0,0,1,0,1,1,1,0,0,0,1,1,1,0,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,0,1,1,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,0,1,0,1,1,1,1,0,1,0,1,0,1,0,1,1,0,0,0,1,1,1,1,0,0,1,0,0,0,0,1,1,1,1,1,0,1,0,0,0,1,0,1,1,0,0,1,1,0,0,0,0,1,0,0,1,1,1,0,1,1,1,0,1,1,0,1,1,1,1,0,1,1,0,1,1,1,0,1,0,1,1,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,0,0,1,0,1,1,0,0,0,1,0,1,1,0,1,1,1,0,0,1,1,0,0,1,1,0,1,1,1,1,1,0,0,0,1,1,1,1,0,0,1])
 signature_watermark = np.array([1,0,1,0,0,1,1,1,0,0,0,1,0,0,1,1,1,0,1,0,0,0,1,1,1,0,1,0,1,0,1,0,1,0,1,1,0,0,0,1,1,0,1,1,1,1,0,1,1,1,1,0,0,1,0,1,0,1,0,1,1,0,0,1,1,1,0,1,0,1,0,0,1,1,1,0,0,0,0,0,0,1,1,1,1,1,0,1,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,1,0,1,0,1,0,0,0,0,0,1,0,1,0,1,0,1,0,0,0,1,1,1,0,1,1,0,0,1,1,1,0,1,1,1,0,0,1,1,0,1,1,0,1,0,0,1,1,1,0,0,1,1,0,0,0,1,1,1,1,0,1,1,1,0,0,1,1,0,0,0,0,0,0,1,0,0,0,1,1,0,1,1,1,0,0,0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,0,1,1,0,1,1,0,0,1,1,0,1,1,1,0,1,1,0,1,1,1,1,1,1,0,1,0,0,1,1,1,1,0,0,0,0,0,0,1,1,0,0,1,1,1,0,1,0,0,0,0,1,1,0,1,0,0,0,0,0,1,1,1,0,1,1,0,0,0,0,0,1,0,1,0,1,1,0,1,0,1,0,0,0,1,0,0,1,1,0,1,0,1,0,1,0,1,1,1,1,0,1,0,1,1,0,1,1,1,1,0,0,0,1,0,0,0,0,0,0,0,0,1,1,0,0,0,1,1,0,1,1,0,1,1,1,1,1,1,0,0,1,0,1,1,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,0,1,1,0,0,1,0,1,1,1,1,1,1,1,1,0,0,0,1,1,1,0,1,1,1,1,0,0,0,1,0,0,0,1,0,0,1,1,0,1,1,1,1,0,1,1,1,0,1,1,1,0,0,1,1,1,0,0,1,1,0,0,0,0,1,1,0,1,0,0,0,1,0,0,1,1,1,1,0,0,0,0,1,1,1,1,1,0,1,1,1,1,0,1,0,0,1,1,0,0,0,1,1,1,1,1,0,0,1,0,0,1,1,1,0,0,1,0,1,1,0,0,0,0,0,1,0,1,0,1,0,0,1,0,1,0,0,1])
+
 features = []
 label =[]
-def operate(var):
-    # Load the original image
-    coloured_image = cv2.imread(var)
+
+def operate(image_path):
+    '''This function would get the image path and return the predicted watermark'''
+
+    coloured_image = cv2.imread(image_path)
     coloured_image = cv2.resize(coloured_image, (512, 512))
     original_image = cv2.cvtColor(coloured_image, cv2.COLOR_BGR2GRAY)
-    
 
-    # Define secret seed keys
     key1 = 123
     key2 = 234
 
-    # Define embedding threshold
     embedding_threshold = 0.5
 
-    # Embed watermark
-    feat = extract_features(original_image, reference_watermark, signature_watermark, key1, key2, embedding_threshold)
-    return feat
-for image_file in os.listdir("non-embedded-train"):
-    image_path=os.path.join("non-embedded-train",image_file)
-    features.append(operate(image_path))
-    label.append(0)
+    hl3_subband = perform_lwt(original_image, 3)
 
-for image_file in os.listdir("embedded"):
-    image_path=os.path.join("embedded",image_file)
-    features.append(operate(image_path))
-    label.append(1)
+    randomized_subband = randomize_coefficients(hl3_subband, key1, True)
 
-X_train, X_test, y_train, y_test = train_test_split(features, label, test_size=0.1, random_state=42)
+    scrambled_subband = arrange_and_scramble(randomized_subband, key2, True)
 
-# file = open("output.txt",'w')
-# for i in range(len(X_train)):
-#     file.write(str(X_train[i]))
-#     file.write(" : ")
-#     file.write(str(y_train[i]))
-#     file.write("\n")
-# file.close()
-# # Initialize SVM classifier
-clf = svm.SVC(kernel='rbf')
+    scrambled_subband = scrambled_subband.reshape(-1, 2, 2)
+        
+    singular_matrices = perform_svd(scrambled_subband)
 
-# # Train the SVM classifier
-clf.fit(X_train, y_train)
-# # Evaluate the model
+    extracted_features = extract_features(singular_matrices)
 
-# # Save the trained model
-# joblib.dump(clf, 'svm_model.pkl')
+    X_train = extracted_features[:512]
+    X_test = extracted_features[512:]
 
-# print("SVM model saved.")
-predictions = clf.predict(X_test)
+    Y_train = reference_watermark 
 
-# Evaluate performance
-accuracy = accuracy_score(y_test, predictions)
-classification_rep = classification_report(y_test, predictions)
+    clf = svm.SVC(kernel='rbf')
 
-# Print accuracy and classification report
-print("Accuracy:", accuracy)
-print("Classification Report:\n", classification_rep)
+    clf.fit(X_train, Y_train)
+
+    sw_features = []
+
+    # Predict SW using SVM classifier
+    predicted_sw = clf.predict(X_test)
+
+    return predicted_sw
+
+
+
+for image_file in os.listdir("embedded-train-advay"):
+    image_path=os.path.join("embedded-train-advay",image_file)
+    predicted_watermark = operate(image_path)
+    count = 0
+    for value, index in enumerate(predicted_watermark): 
+        if value == signature_watermark[index]:
+            count += 1;
+
+    accuracy = count / 512
+    print("Accuracy is:", accuracy)
 
