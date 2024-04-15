@@ -33,51 +33,6 @@ def ncc(image1, image2):
     return ncc_value
 
 
-def generate_watermark_HL3(HL3, reference_watermark, signature_watermark, key1, key2, embedding_threshold):
-    # print("Step 1: Perform LWT three times to obtain HL3 sub-band")
-    hl3_subband = HL3
-
-    # print("Step 2: Randomize coefficients")
-    randomized_subband = randomize_coefficients(hl3_subband, key1, True)
-
-    # print("Step 3: Arrange and scramble coefficients")
-    scrambled_subband = arrange_and_scramble(randomized_subband, key2, True)
-
-    # print("Step 4: Perform SVD on every block")
-    scrambled_subband = scrambled_subband.reshape(-1, 2, 2)
-    singular_matrices = perform_svd(scrambled_subband)
-
-    # print("Step 5: Calculate average difference between singular values")
-    average_difference = calculate_average_difference(singular_matrices)
-
-    # print("Step 6: Concatenate reference and signature watermarks")
-    watermark = np.concatenate((reference_watermark, signature_watermark))
-
-    # print("Step 7: Embed watermark")
-    for bit in watermark:
-        for matrix in singular_matrices:
-            if bit == 1:
-                dominant_index = np.argmax(matrix[1])
-                dominant_value = matrix[1][dominant_index]
-                threshold = embedding_threshold if dominant_value < average_difference else average_difference
-                matrix[1][dominant_index] += threshold
-            # For bit 0, no modification needed
-
-    # print("Step 8: Reconstruct blocks using modified singular matrices")
-    modified_subband = np.array(
-        [np.dot(np.dot(u, np.diag(s)), vh) for u, s, vh in singular_matrices])
-
-    # print("Step 9: Inverse shuffle coefficients")
-    inverse_shuffled_subband = arrange_and_scramble(
-        modified_subband.reshape(-1, len(hl3_subband)), key2, False)
-    inverse_shuffled_subband = randomize_coefficients(
-        inverse_shuffled_subband, key1, False)
-
-    # print("Watermark embedded successfully.")
-
-    return inverse_shuffled_subband
-
-
 def perform_lwt(image):
     image = image.copy()
 
@@ -140,14 +95,9 @@ for image_file in os.listdir("non-embedded-train"):
     image_path = os.path.join("non-embedded-train", image_file)
     original_image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
 
-    # print('perform lwt on ', image_file)
     coeffs = perform_lwt(original_image)
     LL, (LH3, HL3, HH3), (LH2, HL2, HH2), (LH1, HL1, HH1) = coeffs
-    # print('HL3 ', HL3)  # 64x64
-    new_HL3 = generate_watermark_HL3(
-        HL3, reference_watermark, signature_watermark, key1, key2, embedding_threshold)
-
-    # print('new HL3 ', new_HL3)
+    new_HL3 = HL3  # temporary, using same HL3
     new_coeffs = LL, (LH3, new_HL3, HH3), (LH2, HL2, HH2), (LH1, HL1, HH1)
 
     watermarked_image = inverse_lwt(new_coeffs)
