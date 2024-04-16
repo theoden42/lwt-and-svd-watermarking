@@ -5,7 +5,7 @@ from PIL import Image, ImageDraw, ImageFont
 from embed import embed_watermark
 
 app = Flask(__name__)
-UPLOADS_DIR = '/home/advait/lwt-and-svd-watermarking/embedded-train-advay/uploads/'
+UPLOADS_DIR = './embedded-train-advay/uploads/'
 
 # Route to serve the image from the uploads directory
 @app.route('/uploads/<filename>')
