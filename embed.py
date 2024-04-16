@@ -91,9 +91,11 @@ key2 = 234
 embedding_threshold = 0.5
 
 
-for image_file in os.listdir("non-embedded-train"):
-    image_path = os.path.join("non-embedded-train", image_file)
-    original_image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+def embed_watermark(img_path):
+    original_image = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+    original_image = cv2.resize(original_image, (512, 512))
+
+    print('embed in ', img_path)
 
     coeffs = perform_lwt(original_image)
     LL, (LH3, HL3, HH3), (LH2, HL2, HH2), (LH1, HL1, HH1) = coeffs
@@ -102,17 +104,35 @@ for image_file in os.listdir("non-embedded-train"):
 
     watermarked_image = inverse_lwt(new_coeffs)
 
-
-    new_image_name = image_file.split(".")[0] + "_embedded.png"
-    cv2.imwrite(os.path.join("embedded-train-advay",
-                new_image_name), watermarked_image)
+    new_image_name = img_path.split(".")[0] + "_embedded.png"
+    new_path = os.path.join("embedded-train-advay",
+                            new_image_name)
+    cv2.imwrite(new_path, watermarked_image)
 
     psnr_value = psnr(original_image, watermarked_image)
-    # print("PSNR:", psnr_value)
+    psnr_list.append(psnr_value)
+    print("PSNR:", psnr_value)
 
     ncc_value = ncc(original_image, watermarked_image)
-
+    ncc_list.append(ncc_value)
     print("NCC:", ncc_value)
 
     return new_path
 
+
+psnr_list = []
+ncc_list = []
+for image_file in os.listdir("non-embedded-train"):
+    image_path = os.path.join("non-embedded-train", image_file)
+    embed_watermark(image_path)
+    # print(generate_sync_info(cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)))
+
+print('For ', len(os.listdir("non-embedded-train")),
+      ' sample images: PSNR and NCC values have:')
+print("Minimum:", np.min(psnr_list),
+      "| Maximum:", np.max(psnr_list),
+      "| Mean:", np.mean(psnr_list),
+      "| Standard Deviation:", np.std(psnr_list))
+
+print("Minimum:", np.min(ncc_list), "| Maximum:", np.max(ncc_list),
+      "| Mean:", np.mean(ncc_list), "| Standard Deviation:", np.std(ncc_list))
