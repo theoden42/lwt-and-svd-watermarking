@@ -5,8 +5,6 @@
 </head> 
 <body> 
     <p>File uploaded successfully</p> 
-    <p>File Name: {{ file_path }}</p> 
-    <p><a href="{{ url_for('serve_file', filename=os.path.basename(file_path)) }}">Download File</a></p>
-    <p><img src="{{ url_for('serve_file', filename=os.path.basename(file_path)) }}" alt="Uploaded File"></p>
+    <p>File Name: {{ file_path }}</p>
 </body> 
 </html>

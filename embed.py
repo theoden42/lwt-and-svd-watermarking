@@ -102,6 +102,7 @@ for image_file in os.listdir("non-embedded-train"):
 
     watermarked_image = inverse_lwt(new_coeffs)
 
+
     new_image_name = image_file.split(".")[0] + "_embedded.png"
     cv2.imwrite(os.path.join("embedded-train-advay",
                 new_image_name), watermarked_image)
@@ -110,4 +111,8 @@ for image_file in os.listdir("non-embedded-train"):
     # print("PSNR:", psnr_value)
 
     ncc_value = ncc(original_image, watermarked_image)
-    # print("NCC:", ncc_value)
+
+    print("NCC:", ncc_value)
+
+    return new_path
+
