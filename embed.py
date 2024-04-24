@@ -36,45 +36,45 @@ def ncc(image1, image2):
 def generate_watermark_HL3(HL3, reference_watermark, signature_watermark, key1, key2, embedding_threshold):
     print("Step 1: Perform 3 level LWT to obtain HL3 sub-band")
     hl3_subband = HL3
-
     print("Step 2: Randomize coefficients")
     randomized_subband = randomize_coefficients(hl3_subband, key1, True)
-
     print("Step 3: Arrange and scramble blocks")
     scrambled_subband = arrange_and_scramble(randomized_subband, key2, True)
 
     print("Step 4: Perform SVD on every block")
     scrambled_subband = scrambled_subband.reshape(-1, 2, 2)
     singular_matrices = perform_svd(scrambled_subband)
-
     print("Step 5: Calculate average difference between singular values")
     average_difference = calculate_average_difference(singular_matrices)
 
     print("Step 6: Concatenate reference and signature watermarks")
     watermark = np.concatenate((reference_watermark, signature_watermark))
-
+    print(watermark)
     print("Step 7: Embed watermark")
-    for bit in watermark:
-        for matrix in singular_matrices:
-            if bit == 1:
-                dominant_index = np.argmax(matrix[1])
-                dominant_value = matrix[1][dominant_index]
-                threshold = embedding_threshold if dominant_value < average_difference else average_difference
-                matrix[1][dominant_index] += threshold
-            # For bit 0, no modification needed
+    # for bit in watermark:
+    #     for matrix in singular_matrices:
+    #         dominant_index = np.argmax(matrix[1])
+    #         if bit == 1:
+    #             threshold = embedding_threshold if (np.max(matrix[1]) - np.min(matrix[1])) < average_difference else 0
+    #             matrix[1][dominant_index] += threshold
+            # else :
+            #     matrix[1][dominant_index]=matrix[1][1-dominant_index]
+    # for bit in watermark:
+    #     for matrix in singular_matrices:
+    #         if bit == 1:
+    #             dominant_index = np.argmax(matrix[1])
+    #             dominant_value = matrix[1][dominant_index]
+    #             threshold = embedding_threshold if dominant_value < average_difference else average_difference
+    #             matrix[1][dominant_index] += threshold
 
     print("Step 8: Reconstruct blocks using modified singular matrices")
     modified_subband = np.array(
         [np.dot(np.dot(u, np.diag(s)), vh) for u, s, vh in singular_matrices])
-
     print("Step 9: Inverse shuffle coefficients")
     inverse_shuffled_subband = arrange_and_scramble(
         modified_subband.reshape(-1, len(hl3_subband)), key2, False)
-    inverse_shuffled_subband = randomize_coefficients(
-        inverse_shuffled_subband, key1, False)
-
+    inverse_shuffled_subband = randomize_coefficients(inverse_shuffled_subband, key1, False)
     print("Watermark embedded successfully.")
-
     return inverse_shuffled_subband
 
 
@@ -97,9 +97,10 @@ def inverse_lwt(all_coeffs):
 def randomize_coefficients(subband, key1,var):
     """Randomize HL3 sub-band coefficients using secret seed key1"""
     np.random.seed(key1)
+    shuffled_indices = np.random.permutation(subband.shape[0] * subband.shape[1])
     if var==False:
-        return np.argsort(np.random.permutation(subband))
-    return np.random.permutation(subband)
+        shuffled_indices = np.argsort(shuffled_indices)
+    return subband.reshape(-1)[shuffled_indices].reshape(subband.shape)
 
 def arrange_and_scramble(coefficients, key2,var):
     """Arrange and scramble coefficients in non-overlapping 2x2 blocks using secret seed key2"""
@@ -148,28 +149,28 @@ def generate_sync_info(image):
     return sync_info
 
 
-def generate_rw(image, key1):
-    # Generate random bits as string array
-    random_bits = np.random.randint(0, 2, size=448).astype(str)
+# def generate_rw(image, key1):
+#     # Generate random bits as string array
+#     random_bits = np.random.randint(0, 2, size=448).astype(str)
 
-    # Generate synchronization information
-    sync_info = generate_sync_info(image)
+#     # Generate synchronization information
+#     sync_info = generate_sync_info(image)
 
-    # Concatenate random bits and sync info
-    reference_watermark = np.concatenate((random_bits, [sync_info]))
+#     # Concatenate random bits and sync info
+#     reference_watermark = np.concatenate((random_bits, [sync_info]))
 
-    return reference_watermark
+#     return reference_watermark
 
 
 reference_watermark = np.array([1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0,
-                               0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1])
+                              0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1])
 signature_watermark = np.array([1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0,
                                1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1])
 
 key1 = 123
 key2 = 234
 
-embedding_threshold = 0.5
+embedding_threshold = 126
 
 
 def embed_watermark(img_path):
@@ -181,7 +182,7 @@ def embed_watermark(img_path):
     LL, (HL3, LH3, HH3), (HL2, LH2, HH2), (HL1, LH1, HH1) = coeffs
     print('HL3 ', HL3)  # 64x64
 
-    reference_watermark = generate_rw(original_image, key1)
+    # reference_watermark = generate_rw(original_image, key1)
 
     new_HL3 = generate_watermark_HL3(
         HL3, reference_watermark, signature_watermark, key1, key2, embedding_threshold)
@@ -192,7 +193,7 @@ def embed_watermark(img_path):
     watermarked_image = inverse_lwt(new_coeffs)
 
     new_image_name = image_file.split(".")[0] + "_embedded.png"
-    new_path = os.path.join("embedded-train-advay",
+    new_path = os.path.join("embedded-train-new-aman",
                             new_image_name)
     cv2.imwrite(new_path, watermarked_image)
 
@@ -208,4 +209,5 @@ def embed_watermark(img_path):
 for image_file in os.listdir("non-embedded-train"):
     image_path = os.path.join("non-embedded-train", image_file)
     embed_watermark(image_path)
+    break
     # print(generate_sync_info(cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)))
