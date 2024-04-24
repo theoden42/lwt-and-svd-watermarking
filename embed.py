@@ -170,7 +170,7 @@ signature_watermark = np.array([1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 
 key1 = 123
 key2 = 234
 
-embedding_threshold = 126
+embedding_threshold = 0.5
 
 
 def embed_watermark(img_path):
