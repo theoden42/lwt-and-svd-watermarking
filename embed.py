@@ -34,23 +34,23 @@ def ncc(image1, image2):
 
 
 def generate_watermark_HL3(HL3, reference_watermark, signature_watermark, key1, key2, embedding_threshold):
-    print("Step 1: Perform 3 level LWT to obtain HL3 sub-band")
+    # print("Step 1: Perform 3 level LWT to obtain HL3 sub-band")
     hl3_subband = HL3
-    print (hl3_subband.shape)
-    print("Step 2: Randomize coefficients")
+    # print (hl3_subband.shape)
+    # print("Step 2: Randomize coefficients")
     randomized_subband = randomize_coefficients(hl3_subband, key1, True)
-    print("Step 3: Arrange and scramble blocks")
+    # print("Step 3: Arrange and scramble blocks")
     scrambled_subband = arrange_and_scramble(randomized_subband, key2, True)
-    print("Step 4: Perform SVD on every block")
+    # print("Step 4: Perform SVD on every block")
     scrambled_subband = scrambled_subband.reshape(-1, 2, 2)
     singular_matrices = perform_svd(scrambled_subband)
-    print("Step 5: Calculate average difference between singular values")
+    # print("Step 5: Calculate average difference between singular values")
     average_difference = calculate_average_difference(singular_matrices)
 
-    print("Step 6: Concatenate reference and signature watermarks")
+    # print("Step 6: Concatenate reference and signature watermarks")
     watermark = np.concatenate((reference_watermark, signature_watermark))
     # print(watermark)
-    print("Step 7: Embed watermark")
+    # print("Step 7: Embed watermark")
     # for bit in watermark:
     for index, matrix in enumerate(singular_matrices):
         bit = watermark[index]
@@ -61,14 +61,14 @@ def generate_watermark_HL3(HL3, reference_watermark, signature_watermark, key1, 
             matrix[1][dominant_index] += threshold
         else :
             matrix[1][dominant_index]=matrix[1][1-dominant_index]
-        print(matrix[1])
+        # print(matrix[1])
 
-    print("Step 8: Reconstruct blocks using modified singular matrices")
+    # print("Step 8: Reconstruct blocks using modified singular matrices")
     modified_subband = np.array([np.dot(np.dot(u, np.diag(s)), vh) for u, s, vh in singular_matrices])
-    print("Step 9: Inverse shuffle coefficients")
+    # print("Step 9: Inverse shuffle coefficients")
     inverse_shuffled_subband = arrange_and_scramble(modified_subband.reshape(-1, len(hl3_subband)), key2, False)
     inverse_shuffled_subband = randomize_coefficients(inverse_shuffled_subband, key1, False)
-    print("Watermark embedded successfully.")
+    # print("Watermark embedded successfully.")
     return inverse_shuffled_subband
 
 
@@ -77,7 +77,7 @@ def perform_lwt(image):
 
     # Perform wavelet transform
     coeffs = pywt.wavedec2(image, 'haar', level=3)
-    print(coeffs)
+    # print(coeffs)
 
     return coeffs
 
@@ -168,7 +168,7 @@ embedding_threshold = 35
 
 
 def embed_watermark(img_path):
-    print(img_path)
+    print('embedding in,' , img_path)
     original_image = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
     original_image = cv2.resize(original_image, (512, 512))
 
