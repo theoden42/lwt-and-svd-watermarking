@@ -33,12 +33,57 @@ def ncc(image1, image2):
     return ncc_value
 
 
+def generate_watermark_HL3(HL3, reference_watermark, signature_watermark, key1, key2, embedding_threshold):
+    print("Step 1: Perform 3 level LWT to obtain HL3 sub-band")
+    hl3_subband = HL3
+
+    print("Step 2: Randomize coefficients")
+    randomized_subband = randomize_coefficients(hl3_subband, key1, True)
+
+    print("Step 3: Arrange and scramble blocks")
+    scrambled_subband = arrange_and_scramble(randomized_subband, key2, True)
+
+    print("Step 4: Perform SVD on every block")
+    scrambled_subband = scrambled_subband.reshape(-1, 2, 2)
+    singular_matrices = perform_svd(scrambled_subband)
+
+    print("Step 5: Calculate average difference between singular values")
+    average_difference = calculate_average_difference(singular_matrices)
+
+    print("Step 6: Concatenate reference and signature watermarks")
+    watermark = np.concatenate((reference_watermark, signature_watermark))
+
+    print("Step 7: Embed watermark")
+    for bit in watermark:
+        for matrix in singular_matrices:
+            if bit == 1:
+                dominant_index = np.argmax(matrix[1])
+                dominant_value = matrix[1][dominant_index]
+                threshold = embedding_threshold if dominant_value < average_difference else average_difference
+                matrix[1][dominant_index] += threshold
+            # For bit 0, no modification needed
+
+    print("Step 8: Reconstruct blocks using modified singular matrices")
+    modified_subband = np.array(
+        [np.dot(np.dot(u, np.diag(s)), vh) for u, s, vh in singular_matrices])
+
+    print("Step 9: Inverse shuffle coefficients")
+    inverse_shuffled_subband = arrange_and_scramble(
+        modified_subband.reshape(-1, len(hl3_subband)), key2, False)
+    inverse_shuffled_subband = randomize_coefficients(
+        inverse_shuffled_subband, key1, False)
+
+    print("Watermark embedded successfully.")
+
+    return inverse_shuffled_subband
+
+
 def perform_lwt(image):
     image = image.copy()
 
     # Perform wavelet transform
     coeffs = pywt.wavedec2(image, 'haar', level=3)
-    # print(coeffs)
+    print(coeffs)
 
     return coeffs
 
@@ -80,8 +125,44 @@ def calculate_average_difference(singular_matrices):
     return np.mean(differences)
 
 
-reference_watermark = np.array([1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0,
-                               0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1])
+def generate_sync_info(image):
+    # Calculate invariant centroid
+    moments = cv2.moments(image)
+    cx = moments['m10'] / moments['m00']
+    cy = moments['m01'] / moments['m00']
+
+    # Calculate size of the image
+    image_size = image.shape[0] * image.shape[1]
+
+    # Calculate Radon transform phase information
+    theta = np.rad2deg(np.arctan2(image.shape[1], image.shape[0]))
+
+    # Convert to binary strings
+    centroid_binary = format(int(cx), '024b') + format(int(cy), '024b')
+    size_binary = format(image_size, '024b')
+    theta_binary = format(int(theta), '016b')
+
+    # Combine all information into a single 64-bit string
+    sync_info = centroid_binary + size_binary + theta_binary
+
+    return sync_info
+
+
+def generate_rw(image, key1):
+    # Generate random bits as string array
+    random_bits = np.random.randint(0, 2, size=448).astype(str)
+
+    # Generate synchronization information
+    sync_info = generate_sync_info(image)
+
+    # Concatenate random bits and sync info
+    reference_watermark = np.concatenate((random_bits, [sync_info]))
+
+    return reference_watermark
+
+
+# reference_watermark = np.array([1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0,
+#                                0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1])
 signature_watermark = np.array([1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0,
                                1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1])
 
@@ -91,23 +172,40 @@ key2 = 234
 embedding_threshold = 0.5
 
 
-for image_file in os.listdir("non-embedded-train"):
-    image_path = os.path.join("non-embedded-train", image_file)
-    original_image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+def embed_watermark(img_path):
+    original_image = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+    original_image = cv2.resize(original_image, (512, 512))
 
+    print('perform lwt on ', image_file)
     coeffs = perform_lwt(original_image)
-    LL, (LH3, HL3, HH3), (LH2, HL2, HH2), (LH1, HL1, HH1) = coeffs
-    new_HL3 = HL3  # temporary, using same HL3
-    new_coeffs = LL, (LH3, new_HL3, HH3), (LH2, HL2, HH2), (LH1, HL1, HH1)
+    LL, (HL3, LH3, HH3), (HL2, LH2, HH2), (HL1, LH1, HH1) = coeffs
+    print('HL3 ', HL3)  # 64x64
+
+    reference_watermark = generate_rw(original_image, key1)
+
+    new_HL3 = generate_watermark_HL3(
+        HL3, reference_watermark, signature_watermark, key1, key2, embedding_threshold)
+
+    print('new HL3 ', new_HL3)
+    new_coeffs = LL, (new_HL3, LH3, HH3), (HL2, LH2, HH2), (HL1, LH1, HH1)
 
     watermarked_image = inverse_lwt(new_coeffs)
 
     new_image_name = image_file.split(".")[0] + "_embedded.png"
-    cv2.imwrite(os.path.join("embedded-train-advay",
-                new_image_name), watermarked_image)
+    new_path = os.path.join("embedded-train-advay",
+                            new_image_name)
+    cv2.imwrite(new_path, watermarked_image)
 
     psnr_value = psnr(original_image, watermarked_image)
-    # print("PSNR:", psnr_value)
+    print("PSNR:", psnr_value)
 
     ncc_value = ncc(original_image, watermarked_image)
-    # print("NCC:", ncc_value)
+    print("NCC:", ncc_value)
+
+    return new_path
+
+
+for image_file in os.listdir("non-embedded-train"):
+    image_path = os.path.join("non-embedded-train", image_file)
+    embed_watermark(image_path)
+    # print(generate_sync_info(cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)))
