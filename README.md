@@ -21,13 +21,12 @@ Final Results:
 
 - [x] Calculate PSNR and NCC values and final test results of the prediction model 
 
-Table: PSNR and NCC values for 166 sample images
+Table: PSNR and NCC values for 183 sample images
 
 | Metric          | Minimum | Maximum | Mean    | Standard Deviation |
 |-----------------|---------|---------|---------|--------------------|
-| PSNR            | 24.19   | 33.93   | 29.45   | 2.11               |
-| NCC             | 0.94    | 0.99    | 0.99    | 0.01               |
-
+| PSNR            | 28.1104 | 40.4185 | 35.1916 | 2.5539             |
+| NCC             | 0.9856  | 0.9996  | 0.9961  | 0.0026             |
 
 
 
