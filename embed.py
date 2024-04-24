@@ -143,17 +143,17 @@ def generate_sync_info(image):
     return sync_info
 
 
-# def generate_rw(image, key1):
-#     # Generate random bits as string array
-#     random_bits = np.random.randint(0, 2, size=448).astype(str)
+def generate_rw(image, key1):
+    # Generate random bits as string array
+    random_bits = np.random.randint(0, 2, size=448).astype(str)
 
-#     # Generate synchronization information
-#     sync_info = generate_sync_info(image)
+    # Generate synchronization information
+    sync_info = generate_sync_info(image)
 
-#     # Concatenate random bits and sync info
-#     reference_watermark = np.concatenate((random_bits, [sync_info]))
+    # Concatenate random bits and sync info
+    reference_watermark = np.concatenate((random_bits, [sync_info]))
 
-#     return reference_watermark
+    return reference_watermark
 
 
 reference_watermark = np.array([1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0,
@@ -193,15 +193,33 @@ def embed_watermark(img_path):
     cv2.imwrite(new_path, watermarked_image)
 
     psnr_value = psnr(original_image, watermarked_image)
+    psnr_list.append(psnr_value)
     print("PSNR:", psnr_value)
 
     ncc_value = ncc(original_image, watermarked_image)
+    ncc_list.append(ncc_value)
     print("NCC:", ncc_value)
 
     return new_path
 
 
-for image_file in os.listdir("non-embedded-train-aman"):
-    image_path = os.path.join("non-embedded-train-aman", image_file)
+psnr_list = []
+ncc_list = []
+
+
+non_embedded_dir = "non-embedded-train-aman"
+
+for image_file in os.listdir(non_embedded_dir):
+    image_path = os.path.join(non_embedded_dir, image_file)
     embed_watermark(image_path)
     # print(generate_sync_info(cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)))
+
+print('For ', len(os.listdir(non_embedded_dir)),
+      ' sample images: PSNR and NCC values have:')
+print("Minimum:", np.min(psnr_list),
+      "| Maximum:", np.max(psnr_list),
+      "| Mean:", np.mean(psnr_list),
+      "| Standard Deviation:", np.std(psnr_list))
+
+print("Minimum:", np.min(ncc_list), "| Maximum:", np.max(ncc_list),
+      "| Mean:", np.mean(ncc_list), "| Standard Deviation:", np.std(ncc_list))
