@@ -5,6 +5,7 @@ import os
 import matplotlib.pyplot as plt
 from skimage import io
 
+
 def psnr(original, compressed):
     """
     Peak Signal-to-Noise Ratio (PSNR) between two images.
@@ -167,7 +168,7 @@ key2 = 234
 embedding_threshold = 35
 
 
-def embed_watermark(img_path):
+def embed_watermark(img_path, output_dir):
     print('embedding in,' , img_path)
     original_image = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
     original_image = cv2.resize(original_image, (512, 512))
@@ -187,8 +188,9 @@ def embed_watermark(img_path):
 
     watermarked_image = inverse_lwt(new_coeffs)
 
-    new_image_name = image_file.split(".")[0] + "_embedded.png"
-    new_path = os.path.join("embedded-train-new-aman",
+    directory , img_path = os.path.split(img_path)
+    new_image_name = img_path.split(".")[0] + "_embedded.png"
+    new_path = os.path.join(output_dir,
                             new_image_name)
     cv2.imwrite(new_path, watermarked_image)
 
@@ -199,7 +201,7 @@ def embed_watermark(img_path):
     ncc_value = ncc(original_image, watermarked_image)
     ncc_list.append(ncc_value)
     print("NCC:", ncc_value)
-
+    print("saved embedded img at ", new_path)
     return new_path
 
 
@@ -208,10 +210,16 @@ ncc_list = []
 
 
 non_embedded_dir = "non-embedded-train-aman"
+embedded_dir = "embedded-train-new-aman"
 
-for image_file in os.listdir(non_embedded_dir):
+for filename in os.listdir(embedded_dir):
+    file_path = os.path.join(embedded_dir, filename)
+    if os.path.isfile(file_path):
+        os.remove(file_path)
+
+for image_file in os.listdir(non_embedded_dir)[:5]:
     image_path = os.path.join(non_embedded_dir, image_file)
-    embed_watermark(image_path)
+    embed_watermark(image_path, embedded_dir)
     # print(generate_sync_info(cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)))
 
 print('For ', len(os.listdir(non_embedded_dir)),

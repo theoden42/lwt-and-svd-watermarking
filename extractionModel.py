@@ -6,7 +6,7 @@ from sklearn import svm
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import classification_report
-import joblib
+import argparse
 
 np.set_printoptions(threshold=np.inf)
 
@@ -111,6 +111,18 @@ def extract_signature_watermark(image_path):
     return operate(image_path)
 
 
+def ncc(array1, array2):
+    """
+    Compute Normalized Cross-Correlation (NCC) between two 512-bit arrays.
+    """
+    mean_array1 = np.mean(array1)
+    mean_array2 = np.mean(array2)
+    numerator = np.sum((array1 - mean_array1) * (array2 - mean_array2))
+    denominator = np.sqrt(np.sum((array1 - mean_array1) ** 2)
+                          * np.sum((array2 - mean_array2) ** 2))
+    ncc_value = numerator / denominator
+    return ncc_value
+
 def calculate_accuracy(predicted_sw, input_sw):
     count = 0
     for index, value in enumerate(predicted_sw):
@@ -118,16 +130,28 @@ def calculate_accuracy(predicted_sw, input_sw):
             count += 1
 
     accuracy = count / 512
-    print("Accuracy is:", accuracy)
+    # print("Accuracy is:", accuracy)
     return accuracy
 
-# for image_file in os.listdir("embedded-train-new-aman"):
-#     image_path=os.path.join("embedded-train-new-aman",image_file)
-#     predicted_watermark = operate(image_path)
-#     calculate_accuracy(predicted_watermark, signature_watermark)
 
+acc_list = []
+embedded_dir = "embedded-train-new-aman"
+for image_file in os.listdir(embedded_dir)[:5]:
+    image_path = os.path.join(embedded_dir, image_file)
+    predicted_watermark = operate(image_path)
+    # acc_list.append(calculate_accuracy(predicted_watermark, signature_watermark))
+    acc_list.append(ncc(predicted_watermark, signature_watermark))
 
-test_path = input("Enter path of embedded image: ")
-ext_sw = extract_signature_watermark(test_path)
-print("extracted wm", ext_sw)
-calculate_accuracy(ext_sw, signature_watermark)
+print('For ', len(os.listdir(embedded_dir)),
+      ' sample images: PSNR and NCC values have:')
+print("Minimum:", np.min(acc_list),
+      "| Maximum:", np.max(acc_list),
+      "| Mean:", np.mean(acc_list),
+      "| Standard Deviation:", np.std(acc_list))
+
+# Run for a single image
+
+# test_path = input("Enter path of embedded image: ")
+# ext_sw = extract_signature_watermark(test_path)
+# print("extracted wm", ext_sw)
+# calculate_accuracy(ext_sw, signature_watermark)
