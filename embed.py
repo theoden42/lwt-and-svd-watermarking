@@ -61,11 +61,10 @@ def generate_watermark_HL3(HL3, reference_watermark, signature_watermark, key1, 
             matrix[1][dominant_index] += threshold
         else :
             matrix[1][dominant_index]=matrix[1][1-dominant_index]
-        # print(matrix[1])
+        print(matrix[1])
 
     print("Step 8: Reconstruct blocks using modified singular matrices")
-    modified_subband = np.array(
-        [np.dot(np.dot(u, np.diag(s)), vh) for u, s, vh in singular_matrices])
+    modified_subband = np.array([np.dot(np.dot(u, np.diag(s)), vh) for u, s, vh in singular_matrices])
     print("Step 9: Inverse shuffle coefficients")
     inverse_shuffled_subband = arrange_and_scramble(modified_subband.reshape(-1, len(hl3_subband)), key2, False)
     inverse_shuffled_subband = randomize_coefficients(inverse_shuffled_subband, key1, False)
@@ -169,6 +168,7 @@ embedding_threshold = 35
 
 
 def embed_watermark(img_path):
+    print(img_path)
     original_image = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
     original_image = cv2.resize(original_image, (512, 512))
 

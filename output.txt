@@ -1,0 +1,36 @@
+embedded-train-new-aman/mandril_gray_embedded.png
+Accuracy is: 1.0
+embedded-train-new-aman/pirate_embedded.png
+Accuracy is: 1.0
+embedded-train-new-aman/cameraman_embedded.png
+Accuracy is: 0.994140625
+embedded-train-new-aman/lena_gray_512_embedded.png
+Accuracy is: 1.0
+embedded-train-new-aman/lena_color_256_embedded.png
+Accuracy is: 1.0
+embedded-train-new-aman/peppers_gray_embedded.png
+Accuracy is: 0.99609375
+embedded-train-new-aman/peppers_color_embedded.png
+Accuracy is: 0.998046875
+embedded-train-new-aman/lena_gray_512 copy_embedded.png
+Accuracy is: 1.0
+embedded-train-new-aman/woman_darkhair_embedded.png
+Accuracy is: 1.0
+embedded-train-new-aman/walkbridge_embedded.png
+Accuracy is: 1.0
+embedded-train-new-aman/lena_color_512_embedded.png
+Accuracy is: 1.0
+embedded-train-new-aman/mandril_color_embedded.png
+Accuracy is: 1.0
+embedded-train-new-aman/house_embedded.png
+Accuracy is: 1.0
+embedded-train-new-aman/livingroom_embedded.png
+Accuracy is: 1.0
+embedded-train-new-aman/woman_blonde_embedded.png
+Accuracy is: 1.0
+embedded-train-new-aman/lake_embedded.png
+Accuracy is: 1.0
+embedded-train-new-aman/lena_gray_256_embedded.png
+Accuracy is: 1.0
+embedded-train-new-aman/jetplane_embedded.png
+Accuracy is: 1.0
